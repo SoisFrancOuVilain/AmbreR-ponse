@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compteur de jours</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="info-column">
+        <h2>Informations</h2>
+        <p>Compteur de jours actif ou désactivé :</p>
+        <p id="status">Inactif</p>
+    </div>
+
+    <div class="counter-column">
+        <div id="dayCounter" class="counter">0 jours, 0 heures, 0 minutes, 0 secondes</div>
+        <div class="buttons">
+            <button class="start-btn" onclick="startCounter()">Démarrer</button>
+            <button class="stop-btn" onclick="stopCounter()">Arrêter</button>
+            <button class="reset-btn" onclick="resetCounter()">Reset</button>
+            <button class="clear-history-btn" onclick="clearHistory()">Réinitialiser l'historique</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tableau pour afficher l'historique des valeurs -->
+<div class="history-container">
+    <h3>Historique des valeurs</h3>
+    <table id="historyTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date d'activation</th>
+                <th>Temps enregistré</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Les lignes seront ajoutées ici -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let counter = 0;
+    let interval = null;
+    let history = []; // Tableau pour stocker les temps enregistrés
+    let activationDate = null; // Stocker la date d'activation
+    const statusElement = document.getElementById('status');
+    const dayCounterElement = document.getElementById('dayCounter');
+    const historyTableBody = document.querySelector('#historyTable tbody');
+
+    // Charger la valeur stockée dans localStorage si elle existe
+    window.onload = () => {
+        if (localStorage.getItem('counter')) {
+            counter = parseInt(localStorage.getItem('counter'), 10);
+            dayCounterElement.textContent = convertToTimeFormat(counter);
+        }
+    };
+
+    // Démarrer le compteur
+    function startCounter() {
+        if (!interval) {
+            statusElement.textContent = 'Actif';
+            activationDate = new Date().toLocaleString(); // Enregistrer la date d'activation
+            interval = setInterval(() => {
+                counter++;
+                dayCounterElement.textContent = convertToTimeFormat(counter);
+                localStorage.setItem('counter', counter); // Stocker la valeur à chaque incrémentation
+            }, 1000); // 1000ms = 1 seconde
+        }
+    }
+
+    // Arrêter le compteur
+    function stopCounter() {
+        if (interval) {
+            clearInterval(interval);
+            interval = null;
+            statusElement.textContent = 'Inactif';
+        }
+    }
+
+    // Réinitialiser le compteur et ajouter l'ancienne valeur au tableau
+    function resetCounter() {
+        stopCounter(); // Arrêter le compteur si nécessaire
+
+        // Ajouter l'ancienne valeur au tableau si elle est différente de zéro
+        if (counter > 0) {
+            history.push({ counter, activationDate });
+            addToHistoryTable(counter, activationDate); // Ajouter au tableau HTML
+        }
+
+        // Réinitialiser le compteur
+        counter = 0;
+        dayCounterElement.textContent = convertToTimeFormat(counter);
+        localStorage.setItem('counter', counter); // Réinitialiser la valeur dans localStorage
+        statusElement.textContent = 'Inactif';
+    }
+
+    // Réinitialiser l'historique du tableau
+    function clearHistory() {
+        history = [];
+        historyTableBody.innerHTML = ''; // Effacer toutes les lignes du tableau
+    }
+
+    // Fonction pour convertir les secondes en format "jours, heures, minutes, secondes"
+    function convertToTimeFormat(seconds) {
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor(((seconds % 86400) % 3600) / 60);
+        const secs = seconds % 60;
+        return `${days} jours, ${hours} heures, ${minutes} minutes, ${secs} secondes`;
+    }
+
+    // Fonction pour ajouter une entrée au tableau HTML
+    function addToHistoryTable(value, date) {
+        const row = document.createElement('tr');
+        const indexCell = document.createElement('td');
+        const dateCell = document.createElement('td');
+        const valueCell = document.createElement('td');
+
+        indexCell.textContent = history.length; // Le numéro de la ligne
+        dateCell.textContent = date; // Date d'activation du compteur
+        valueCell.textContent = convertToTimeFormat(value); // Convertir en format de temps
+
+        row.appendChild(indexCell);
+        row.appendChild(dateCell);
+        row.appendChild(valueCell);
+        historyTableBody.appendChild(row); // Ajouter la ligne au tableau
+    }
+</script>
+
+</body>
+</html>
